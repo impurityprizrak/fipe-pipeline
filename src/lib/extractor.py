@@ -48,7 +48,7 @@ class BrandExtractor:
         self.__year_buffer: list[dict] = list()
         self.__data_buffer: list[dict] = list()
 
-    async def __async_request(self, url: str, max_retries: int = 5, base_delay=5.0, max_delay=20.0, jitter=2.0):
+    async def __async_request(self, url: str, max_retries=5, base_delay=5.0, max_delay=20.0, jitter=2.0):
         retries = 0
 
         while retries < max_retries:
