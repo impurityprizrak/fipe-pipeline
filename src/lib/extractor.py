@@ -203,7 +203,7 @@ class BrandExtractor:
                 self.__year_buffer.append(year.to_dict())
     
     async def stream(self):
-        # Executa concorrentemente as extrações de dados
+        # Executa concorrentemente as extrações de dados e retorna o resultado da extração
         models = self._extract_models()
         years = self._extract_years()
         data = self._extract_all_data()
