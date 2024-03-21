@@ -44,6 +44,7 @@ class Exporter:
         }
 
     def __enter__(self):
+        # Abre uma nova conexão com o banco de dados
         self.__db_manager = DBConnectionManager(
             dbname=os.environ['POSTGRES_DB'],
             user=os.environ['POSTGRES_USER'],
@@ -55,9 +56,11 @@ class Exporter:
         return self
     
     def __exit__(self, *args, **kwargs):
+        # Fecha a conexão com o banco de dados ao encerrar a instância
         self.__db_manager.close()
 
     def export_data(self, target: Literal['fipe', 'models', 'years', 'brands'], results: list[dict]):
+        # Realiza a exportação dos dados para suas respectivas tabelas
         query = self.queries[target]
 
         if not self.__db_manager.is_connected:

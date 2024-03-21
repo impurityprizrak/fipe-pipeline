@@ -53,6 +53,8 @@ class BrandExtractor:
 
         while retries < max_retries:
             async with aiohttp.ClientSession() as session:
+                # Faz a requisição e em caso de erro (rate limit) faz as retentativas
+                # utilizando um backoff exponencial entre elas
                 try:
                     async with session.get(url, timeout=30) as response:
                         data = await response.text()
@@ -88,9 +90,11 @@ class BrandExtractor:
         models: list[dict[str, str]] = json.loads(data)['modelos']
 
         for model in models:
+            # Insere os dados do modelo extraído na fila de modelos
             model_data = Model(self.__brand, str(model['codigo']), model['nome'])
             await self.__models_queue.put(model_data)
 
+        # Envia um sinal para fechar a fila de modelos
         await self.__models_queue.put(None)
 
     async def _extract_years(self):
@@ -111,17 +115,21 @@ class BrandExtractor:
             years: list[dict[str, str]] = json.loads(data)
 
             for year in years:
+                # Insere os dados do ano extraído na fila de anos
                 year_data = Year(model, str(year['codigo']), year['nome'])
                 await self.__years_queue.put(year_data)
 
+            # Encerra a extração de anos se tiver alcançado o limite de dados no buffer principal
             if self.__limit >= 0 and len(self.__data_buffer) >= self.__limit:
                 break
             
             model = await self.__models_queue.get()
 
+            # Salva o modelo no buffer de modelos
             if model:
                 self.__model_buffer.append(model.to_dict())
         
+        # Envia um sinal para fechar a fila de anos
         await self.__years_queue.put(None)
 
     async def _extract_all_data(self):
@@ -141,6 +149,8 @@ class BrandExtractor:
             
             data: dict[str, Any] = json.loads(data)
 
+            # Converte o campo de valor para float
+
             value_pattern = r"R\$\s*([\d.,]+)"
             match = re.search(value_pattern, data['Valor'])
             
@@ -150,6 +160,7 @@ class BrandExtractor:
             value_str = match.group(1).replace(".", "").replace(",", ".")
             value = float(value_str)
 
+            # Converte o campo de mês de referência para o formato MM-YYYY
             months = {
                 "janeiro": "01", "fevereiro": "02", "março": "03", "abril": "04",
                 "maio": "05", "junho": "06", "julho": "07", "agosto": "08",
@@ -177,17 +188,21 @@ class BrandExtractor:
                 'fuel_sign': data['SiglaCombustivel']
             }
 
+            # Salva os detalhes do veículo no buffer
             self.__data_buffer.append(result)
 
+            # Encerra a extração dos dados se tiver alcançado o limite de dados no buffer principal
             if self.__limit >= 0 and len(self.__data_buffer) >= self.__limit:
                 break
 
             year = await self.__years_queue.get()
 
             if year:
+                # Salva o ano no buffer de anos
                 self.__year_buffer.append(year.to_dict())
     
     async def stream(self):
+        # Executa concorrentemente as extrações de dados
         models = self._extract_models()
         years = self._extract_years()
         data = self._extract_all_data()
