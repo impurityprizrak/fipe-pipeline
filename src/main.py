@@ -1,4 +1,4 @@
-from lib.extractor import BrandExtractor, ExtractionResult, extract_brands
+from lib.extractor import BrandExtractor, extract_brands
 from lib.exporter import Exporter
 from lib.utils import unify_results
 import asyncio
