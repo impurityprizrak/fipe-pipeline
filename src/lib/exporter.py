@@ -1,11 +1,14 @@
 from .database import DBConnectionManager
+from .extractor import ExtractionResult
 from psycopg2.extras import execute_batch
 from typing import Literal
 import os
 
 
 class Exporter:
-    def __init__(self) -> None:
+    def __init__(self, results: ExtractionResult) -> None:
+        self.__results = results
+
         fipe_fields = ['id', 'type', 'value', 'brand', 'model', 'year', 'fuel', 'month_reference', 'fuel_sign']
 
         fipe_query = f"""
@@ -59,7 +62,13 @@ class Exporter:
         # Fecha a conexão com o banco de dados ao encerrar a instância
         self.__db_manager.close()
 
-    def export_data(self, target: Literal['fipe', 'models', 'years', 'brands'], results: list[dict]):
+    def export_data(self):
+        self.__export('fipe', self.__results['data'])
+        self.__export('brands', self.__results['brand'])
+        self.__export('models', self.__results['models'])
+        self.__export('years', self.__results['years'])
+
+    def __export(self, target: Literal['fipe', 'models', 'years', 'brands'], results: list[dict]):
         # Realiza a exportação dos dados para suas respectivas tabelas
         query = self.queries[target]
 

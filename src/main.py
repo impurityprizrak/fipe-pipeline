@@ -1,16 +1,7 @@
 from lib.extractor import BrandExtractor, ExtractionResult, extract_brands
 from lib.exporter import Exporter
+from lib.utils import unify_results
 import asyncio
-
-def export_batch(results: list[ExtractionResult]):
-    with Exporter() as e:
-        for result in results:
-            # Itera sobre os resultados de cada extração e exporta cada um para suas
-            # respectivas tabelas
-            e.export_data('brands', result['brand'])
-            e.export_data('models', result['models'])
-            e.export_data('years', result['years'])
-            e.export_data('fipe', result['data'])
 
 async def execute_pipeline(chunk_size=20, limit=-1):
     """
@@ -29,8 +20,11 @@ async def execute_pipeline(chunk_size=20, limit=-1):
     # Aguarda a execução concorrente de cada chunk de tasks e exporta o resultado 
     for chunk in chunked_tasks:
         results = await asyncio.gather(*chunk)
-        export_batch(results)
+        unified = unify_results(results)
 
+        with Exporter(unified) as e:
+            e.export_data()
+        
 if __name__ == '__main__':
     asyncio.run(execute_pipeline(limit=10))
 
