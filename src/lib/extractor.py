@@ -98,6 +98,7 @@ class BrandExtractor:
         await self.__models_queue.put(None)
 
     async def _extract_years(self):
+        # Obtém o primeiro modelo da fila e armazena no buffer de modelos
         model = await self.__models_queue.get()
         self.__model_buffer.append(model.to_dict())
 
@@ -123,9 +124,9 @@ class BrandExtractor:
             if self.__limit >= 0 and len(self.__data_buffer) >= self.__limit:
                 break
             
+            # Obtém o próximo modelo da fila e armazena no buffer de modelos
             model = await self.__models_queue.get()
 
-            # Salva o modelo no buffer de modelos
             if model:
                 self.__model_buffer.append(model.to_dict())
         
@@ -133,6 +134,7 @@ class BrandExtractor:
         await self.__years_queue.put(None)
 
     async def _extract_all_data(self):
+        # Obtém o primeiro ano da fila e armazena no buffer de anos
         year = await self.__years_queue.get()
         self.__year_buffer.append(year.to_dict())
 
@@ -150,7 +152,6 @@ class BrandExtractor:
             data: dict[str, Any] = json.loads(data)
 
             # Converte o campo de valor para float
-
             value_pattern = r"R\$\s*([\d.,]+)"
             match = re.search(value_pattern, data['Valor'])
             
@@ -194,11 +195,11 @@ class BrandExtractor:
             # Encerra a extração dos dados se tiver alcançado o limite de dados no buffer principal
             if self.__limit >= 0 and len(self.__data_buffer) >= self.__limit:
                 break
-
+            
+            # Obtém o próximo ano da fila e armazena no buffer de anos
             year = await self.__years_queue.get()
 
             if year:
-                # Salva o ano no buffer de anos
                 self.__year_buffer.append(year.to_dict())
     
     async def stream(self):
